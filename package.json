@@ -1,0 +1,18 @@
+{
+  "name": "pa-ronabot",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node ./index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bent": "^7.3.12",
+    "cheerio": "^1.0.0-rc.5",
+    "puppeteer": "^7.1.0",
+    "pushover-notifications": "^1.2.2"
+  }
+}

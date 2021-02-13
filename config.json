@@ -1,0 +1,10 @@
+{
+  "headless": false,
+  "pushoverAPIKey": "",
+  "pushoverUser": "",
+  "repeatCheckTime": 10000,
+  "url": "https://sr.reportsonline.com/sr/gianteagle/immunizations",
+  "viewportHeight": 600,
+  "viewportWidth": 600,
+  "zip": 15201
+}
