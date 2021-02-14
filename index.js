@@ -18,6 +18,12 @@ const pushClient = hasPushover
   })
   : null
 
+const retryLoop = () => {
+  setTimeout(() => {
+    runTheLoop()
+  }, config.repeatCheckTime)
+}
+
 const isThereVaccines = async (browser, page) => {
   const dom = await page.content()
   // No vaccines, run in X amount of time
@@ -26,22 +32,36 @@ const isThereVaccines = async (browser, page) => {
 
     console.log(`No tests available, trying again in ${ config.repeatCheckTime } milliseconds`)
 
-    setTimeout(() => {
-      runTheLoop()
-    }, config.repeatCheckTime)
+    retryLoop()
+
     return false
   }
 
   return true
 }
 
+const checkForZipError = async (browser, page) => {
+  const dom = await page.content()
+
+  const $ = cheerio.load(dom)
+  const zipError = $('#ZipError')
+
+  if (zipError.length) {
+    console.log(zipError.first().value())
+    console.log(`No tests available, trying again in ${ config.repeatCheckTime } milliseconds`)
+    browser.close()
+
+    retryLoop()
+
+    return true
+  }
+
+  return false
+}
+
 const mainRuntime = async (userConfig) => {
   console.log('Opening browser')
   const browser = await puppeteer.launch({
-    defaultViewport: {
-      height: 1920,
-      width: 1080,
-    },
     headless: userConfig.headless,
     product: 'chrome',
     slowMo: process.env.NODE_ENV === 'production' ? 0 : 1000,
@@ -59,9 +79,6 @@ const mainRuntime = async (userConfig) => {
   const vaccinesAvailable = await isThereVaccines(browser, page)
   if (!vaccinesAvailable) return false
 
-  // NOTE | Have yet to see page load with actual appointments
-  // so alert me so I know when it's ready.
-
   console.log('Waiting in line...')
 
   // await for navigation post-line
@@ -71,20 +88,31 @@ const mainRuntime = async (userConfig) => {
   const isAvailable = await isThereVaccines(browser, page)
   if (!isAvailable) return false
 
-  const screenShot = await page.screenshot()
+  // Find zip field and autofill
+  const $ = cheerio.load(dom)
 
+  const zipInput = $('#zip-input')
+  const submitButton = $('#btnGo')
+
+  zipInput.val(config.zip)
+  await submitButton.click()
+  await page.waitForRequest()
+
+  // check for availability within 50 miles
+  const zipError = await checkForZipError(browser, page)
+  if (zipError) return false
+
+  // Alert me. You've entered your zip code and there is no #ZipError
+  const screenShot = await page.screenshot()
   if (pushClient) {
     pushClient.send({
-      message: 'Quick! Run to your computer.',	// required
+      message: 'Quick, run to your computer! You have 10 minutes to complete the appointment.',	// required
       title: 'COVID Tests may be available',
       sound: 'magic',
       priority: 1,
       file: { name: 'screen.png', data: screenShot },
     })
   }
-
-  // Find zip field and autofill
-  // const $ = cheerio.load(dom)
 }
 
 const runTheLoop = () => mainRuntime(config)
