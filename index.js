@@ -72,8 +72,8 @@ const mainRuntime = async (userConfig) => {
   console.log(`Navigating to ${ userConfig.url }`)
   await page.goto(userConfig.url)
 
-  // set default to 10 min wait time (Giant Eagle has a 10 min max)
-  await page.setDefaultNavigationTimeout(600000)
+  // set default to 10 min wait time (Giant Eagle has a 20 min max)
+  await page.setDefaultNavigationTimeout(1200000)
 
 
   const vaccinesAvailable = await isThereVaccines(browser, page)
@@ -82,7 +82,13 @@ const mainRuntime = async (userConfig) => {
   console.log('Waiting in line...')
 
   // await for navigation post-line
-  await page.waitForNavigation()
+  try {
+    await page.waitForNavigation()
+  } catch(e) {
+    console.log(e)
+    browser.close()
+    retryLoop()
+  }
 
   // again check for vaccine availability
   const isAvailable = await isThereVaccines(browser, page)
