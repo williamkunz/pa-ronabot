@@ -44,6 +44,7 @@ const mainRuntime = async (userConfig) => {
     },
     headless: userConfig.headless,
     product: 'chrome',
+    slowMo: process.env.NODE_ENV === 'production' ? 0 : 1000,
   })
 
   const page = await browser.newPage()
@@ -74,13 +75,15 @@ const mainRuntime = async (userConfig) => {
 
   if (pushClient) {
     pushClient.send({
-      message: 'take a look',	// required
+      message: 'Quick! Run to your computer.',	// required
       title: 'COVID Tests may be available',
       sound: 'magic',
       priority: 1,
       file: { name: 'screen.png', data: screenShot },
     })
   }
+
+  // Find zip field and autofill
   // const $ = cheerio.load(dom)
 }
 
